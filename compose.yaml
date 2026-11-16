@@ -1,0 +1,17 @@
+services:
+  localstack:
+    container_name: localstack-main
+    image: localstack/localstack:latest
+    ports:
+      # tylko lokalnie (127.0.0.1), nie na wszystkich interfejsach
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+    environment:
+      # token z lokalnego pliku .env (plik jest w .gitignore)
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-}
+      - SERVICES=s3,lambda,iam,logs
+      - DEBUG=${DEBUG:-0}
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      # Lambda w LocalStack uruchamia funkcje w osobnych kontenerach -> potrzebny socket Dockera
+      - "/var/run/docker.sock:/var/run/docker.sock"

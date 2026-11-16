@@ -1,0 +1,253 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20261117002318
+Username: LAPTOP-UEMM0REU\oskar
+RunAs User: LAPTOP-UEMM0REU\oskar
+Configuration Name: 
+Machine: LAPTOP-UEMM0REU (Microsoft Windows NT 10.0.26300.0)
+Host Application: powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\oskar\projects\lab2-s3-lambda\uruchom.ps1
+Process ID: 26736
+PSVersion: 5.1.26100.9818
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9818
+BuildVersion: 10.0.26100.9818
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+===== 0. Sprawdzenie =====
+Docker 29.9.2
+
+===== 1. Srodowisko (docker compose) =====
+[+] up 1/1
+ ✔ Container localstack-main Started                                                                                3.8s
+{"features": {"persistence": "disabled"}, "services": {"account": "disabled", "acm-pca": "disabled", "acm": "disabled", "amplify": "disabled", "apigateway": "disabled", "apigatewaymanagementapi": "disabled", "apigatewayv2": "disabled", "appconfig": "disabled", "appconfigdata": "disabled", "application-autoscaling": "disabled", "appsync": "disabled", "athena": "disabled", "autoscaling": "disabled", "backup": "disabled", "batch": "disabled", "bedrock-agentcore-control": "disabled", "bedrock-agentcore": "disabled", "bedrock-runtime": "disabled", "bedrock": "disabled", "ce": "disabled", "cloudcontrol": "disabled", "cloudformation": "disabled", "cloudfront-keyvaluestore": "disabled", "cloudfront": "disabled", "cloudtrail": "disabled", "cloudwatch": "disabled", "codeartifact": "disabled", "codebuild": "disabled", "codecommit": "disabled", "codeconnections": "disabled", "codedeploy": "disabled", "codepipeline": "disabled", "codestar-connections": "disabled", "cognito-identity": "disabled", "cognito-idp": "disabled", "config": "disabled", "dms": "disabled", "docdb": "disabled", "dsql": "disabled", "dynamodb": "disabled", "dynamodbstreams": "disabled", "ec2": "disabled", "ecr": "disabled", "ecs": "disabled", "efs": "disabled", "eks-auth": "disabled", "eks": "disabled", "elasticache": "disabled", "elasticbeanstalk": "disabled", "elb": "disabled", "elbv2": "disabled", "emr-serverless": "disabled", "emr": "disabled", "es": "disabled", "events": "disabled", "firehose": "disabled", "fis": "disabled", "glacier": "disabled", "glue": "disabled", "iam": "available", "identitystore": "disabled", "iot-data": "disabled", "iot": "disabled", "iotwireless": "disabled", "kafka": "disabled", "kinesis": "disabled", "kinesisanalyticsv2": "disabled", "kms": "disabled", "lakeformation": "disabled", "lambda-web": "disabled", "lambda": "available", "logs": "available", "managedblockchain": "disabled", "mediaconvert": "disabled", "memorydb": "disabled", "mq": "disabled", "mwaa": "disabled", "neptune": "disabled", "opensearch": "disabled", "organizations": "disabled", "pinpoint": "disabled", "pipes": "disabled", "ram": "disabled", "rds-data": "disabled", "rds": "disabled", "redshift-data": "disabled", "redshift": "disabled", "resource-groups": "disabled", "resourcegroupstaggingapi": "disabled", "route53": "disabled", "route53resolver": "disabled", "s3": "available", "s3control": "disabled", "s3files": "disabled", "s3tables": "disabled", "sagemaker-runtime": "disabled", "sagemaker": "disabled", "scheduler": "disabled", "secretsmanager": "disabled", "serverlessrepo": "disabled", "servicediscovery": "disabled", "ses": "disabled", "sesv2": "disabled", "shield": "disabled", "sns": "disabled", "sqs": "disabled", "ssm": "disabled", "sso-admin": "disabled", "stepfunctions": "disabled", "sts": "available", "support": "disabled", "swf": "disabled", "textract": "disabled", "timestream-query": "disabled", "timestream-write": "disabled", "transcribe": "disabled", "transfer": "disabled", "verifiedpermissions": "disabled", "wafv2": "disabled", "xray": "disabled"}, "edition": "pro", "version": "2026.10.7"}
+
+===== 2. S3 Website =====
+PS> aws s3 mb s3://oskar-raport-www
+make_bucket: oskar-raport-www
+PS> aws s3api put-public-access-block --bucket oskar-raport-www --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+PS> aws s3api put-bucket-policy --bucket oskar-raport-www --policy file://s3/website-policy.json
+PS> aws s3 website s3://oskar-raport-www --index-document index.html
+PS> aws s3 cp www/index.html s3://oskar-raport-www/index.html --content-type text/html; charset=utf-8
+Completed 761 Bytes/761 Bytes (22.3 KiB/s) with 1 file(s) remaining
+upload: www/index.html to s3://oskar-raport-www/index.html
+PS> aws s3 cp www/style.css s3://oskar-raport-www/style.css --content-type text/css
+Completed 753 Bytes/753 Bytes (27.3 KiB/s) with 1 file(s) remaining
+upload: www/style.css to s3://oskar-raport-www/style.css
+PS> aws s3api get-bucket-website --bucket oskar-raport-www
+{
+    "IndexDocument": {
+        "Suffix": "index.html"
+    }
+}
+
+    <p id="zmiana">Wersja pierwsza strony opublikowana w S3.</p>
+
+===== 2b. Zmiana zdania i ponowna publikacja =====
+PS> aws s3 cp www/index.html s3://oskar-raport-www/index.html --content-type text/html; charset=utf-8
+Completed 769 Bytes/769 Bytes (26.6 KiB/s) with 1 file(s) remaining
+upload: www/index.html to s3://oskar-raport-www/index.html
+    <p id="zmiana">Zdanie zmienione po publikacji - wersja druga.</p>
+
+===== 3. Szablon + Lambda =====
+PS> aws s3 mb s3://oskar-raport-szablony
+make_bucket: oskar-raport-szablony
+PS> aws s3 cp lambda/template.html s3://oskar-raport-szablony/template.html --content-type text/html; charset=utf-8
+Completed 910 Bytes/910 Bytes (35.8 KiB/s) with 1 file(s) remaining
+upload: lambda/template.html to s3://oskar-raport-szablony/template.html
+PS> aws iam create-role --role-name lambda-raport-role --assume-role-policy-document {\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}
+{
+    "Role": {
+        "Path": "/",
+        "RoleName": "lambda-raport-role",
+        "RoleId": "AROAQAAAAAAAGA4PDQAVQ",
+        "Arn": "arn:aws:iam::000000000000:role/lambda-raport-role",
+        "CreateDate": "2026-11-16T22:25:12.253647+00:00",
+        "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "lambda.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }
+    }
+}
+PS> aws lambda create-function --function-name oskar-raport-lambda --runtime python3.12 --handler lambda_function.lambda_handler --zip-file fileb://lambda/function.zip --role arn:aws:iam::000000000000:role/lambda-raport-role --environment Variables={TEMPLATE_BUCKET=oskar-raport-szablony,TEMPLATE_KEY=template.html}
+{
+    "FunctionName": "oskar-raport-lambda",
+    "FunctionArn": "arn:aws:lambda:us-east-1:000000000000:function:oskar-raport-lambda",
+    "Runtime": "python3.12",
+    "Role": "arn:aws:iam::000000000000:role/lambda-raport-role",
+    "Handler": "lambda_function.lambda_handler",
+    "CodeSize": 966,
+    "Description": "",
+    "Timeout": 3,
+    "MemorySize": 128,
+    "LastModified": "2026-11-16T22:25:15.813+0000",
+    "CodeSha256": "k1k0zNhBF++MpL7TXJmXux9PGJuDnRoTsTQTVmw34jk=",
+    "Version": "$LATEST",
+    "Environment": {
+        "Variables": {
+            "TEMPLATE_BUCKET": "oskar-raport-szablony",
+            "TEMPLATE_KEY": "template.html"
+        }
+    },
+    "TracingConfig": {
+        "Mode": "PassThrough"
+    },
+    "RevisionId": "ff6b6d53-0e8f-4bbf-8a48-c994ef4c1cf1",
+    "State": "Pending",
+    "StateReason": "The function is being created.",
+    "StateReasonCode": "Creating",
+    "PackageType": "Zip",
+    "Architectures": [
+        "x86_64"
+    ],
+    "EphemeralStorage": {
+        "Size": 512
+    },
+    "SnapStart": {
+        "ApplyOn": "None",
+        "OptimizationStatus": "Off"
+    },
+    "RuntimeVersionConfig": {
+        "RuntimeVersionArn": "arn:aws:lambda:us-east-1::runtime:8eeff65f6809a3ce81507fe733fe09b835899b99481ba22fd75b5a7338290ec1"
+    },
+    "LoggingConfig": {
+        "LogFormat": "Text",
+        "LogGroup": "/aws/lambda/oskar-raport-lambda"
+    }
+}
+PS> aws lambda wait function-active-v2 --function-name oskar-raport-lambda
+PS> aws lambda create-function-url-config --function-name oskar-raport-lambda --auth-type NONE
+{
+    "FunctionUrl": "http://ksojp1tja03k1mvvhp6xtwsxp3fxwuto.lambda-url.us-east-1.localhost.localstack.cloud:4566/",
+    "FunctionArn": "arn:aws:lambda:us-east-1:000000000000:function:oskar-raport-lambda",
+    "AuthType": "NONE",
+    "CreationTime": "2026-11-16T22:25:49.422+0000"
+}
+Function URL: http://ksojp1tja03k1mvvhp6xtwsxp3fxwuto.lambda-url.us-east-1.localhost.localstack.cloud:4566/
+
+===== 4. Testy HTTP =====
+HTTP/1.1 200 OK
+Server: TwistedWeb/26.10.0
+Date: Mon, 16 Nov 2026 22:25:52 GMT
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+x-amzn-requestid: e6e65ca6-efcf-4c36-9af3-e6bd621d724d
+x-amzn-trace-id: 015e9ead-4976-4740-b4e8-38379010f436
+Content-Length: 905
+x-localstack: 2026.10.7
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raport koszyk├│w</title>
+  <style>
+    body { margin: 0; min-height: 100vh; background: #0f3d2e; font-family: system-ui, sans-serif;
+           display: flex; align-items: center; justify-content: center; }
+    .karta { background: #fff; border-radius: 12px; padding: 2rem 2.5rem;
+             box-shadow: 0 10px 30px rgba(0,0,0,.35); max-width: 560px; }
+    h1 { color: #ff6b00; text-transform: uppercase; letter-spacing: 2px;
+         border-bottom: 4px solid #ff6b00; padding-bottom: .4rem; }
+    .nowe { font-weight: bold; color: #b00020; }
+  </style>
+</head>
+<body>
+  <main class="karta">
+    <h1>Raport dla Ola</h1>
+    <p>Wariant strony generowany przez funkcj─Ö Lambda na podstawie szablonu z S3.</p>
+    <!-- NOWE_ZDANIE -->
+  </main>
+</body>
+</html>
+HTTP/1.1 200 OK
+Server: TwistedWeb/26.10.0
+Date: Mon, 16 Nov 2026 22:25:55 GMT
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+x-amzn-requestid: 20e5f499-6bb8-434e-9902-f2b417e4e97a
+x-amzn-trace-id: ccba6c27-a454-487d-a6d8-a3f20aa49c1e
+Content-Length: 905
+x-localstack: 2026.10.7
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raport koszyk├│w</title>
+  <style>
+    body { margin: 0; min-height: 100vh; background: #0f3d2e; font-family: system-ui, sans-serif;
+           display: flex; align-items: center; justify-content: center; }
+    .karta { background: #fff; border-radius: 12px; padding: 2rem 2.5rem;
+             box-shadow: 0 10px 30px rgba(0,0,0,.35); max-width: 560px; }
+    h1 { color: #ff6b00; text-transform: uppercase; letter-spacing: 2px;
+         border-bottom: 4px solid #ff6b00; padding-bottom: .4rem; }
+    .nowe { font-weight: bold; color: #b00020; }
+  </style>
+</head>
+<body>
+  <main class="karta">
+    <h1>Raport dla Jan</h1>
+    <p>Wariant strony generowany przez funkcj─Ö Lambda na podstawie szablonu z S3.</p>
+    <!-- NOWE_ZDANIE -->
+  </main>
+</body>
+</html>
+HTTP/1.1 400 BAD REQUEST
+Server: TwistedWeb/26.10.0
+Date: Mon, 16 Nov 2026 22:25:55 GMT
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+x-amzn-requestid: f4494fcf-1c7c-4b62-9cfe-97dd5d01aa61
+x-amzn-trace-id: 5ac9f803-433b-403f-b906-0d657eb952ef
+Content-Length: 132
+x-localstack: 2026.10.7
+
+<!DOCTYPE html><meta charset='utf-8'><h1>400 ΓÇô brak parametru imie</h1><p>Dodaj do adresu parametr, np. <code>?imie=Ola</code></p>
+HTTP/1.1 400 BAD REQUEST
+Server: TwistedWeb/26.10.0
+Date: Mon, 16 Nov 2026 22:25:55 GMT
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+x-amzn-requestid: d43a1d05-49a6-4b01-aeea-51079a8a00af
+x-amzn-trace-id: de384690-2af0-4912-a451-06d0e0db9f3a
+Content-Length: 132
+x-localstack: 2026.10.7
+
+<!DOCTYPE html><meta charset='utf-8'><h1>400 ΓÇô brak parametru imie</h1><p>Dodaj do adresu parametr, np. <code>?imie=Ola</code></p>
+    <h1>Raport dla &lt;b&gt;Ola&lt;/b&gt;</h1>
+
+===== 5. Nowe zdanie w szablonie BEZ ponownego wdrozenia =====
+PS> aws s3 cp lambda/template.html s3://oskar-raport-szablony/template.html --content-type text/html; charset=utf-8
+Completed 970 Bytes/970 Bytes (21.5 KiB/s) with 1 file(s) remaining
+upload: lambda/template.html to s3://oskar-raport-szablony/template.html
+    h1 { color: #ff6b00; text-transform: uppercase; letter-spacing: 2px;
+    .nowe { font-weight: bold; color: #b00020; }
+    <h1>Raport dla Ola</h1>
+    <p class="nowe">To zdanie dopisano do szablonu w S3 po wdrozeniu funkcji.</p>
+Obiekt w S3 nadal zawiera {{IMIE}}:
+PS> aws s3 cp s3://oskar-raport-szablony/template.html -
+    <h1>Raport dla {{IMIE}}</h1>
+PS> aws s3 ls
+2026-11-16 22:25:05 oskar-raport-szablony
+2026-11-16 22:24:43 oskar-raport-www
+PS> aws lambda list-functions --query Functions[].FunctionName
+[
+    "oskar-raport-lambda"
+]
+**********************
+Windows PowerShell transcript end
+End time: 20261117002607
+**********************

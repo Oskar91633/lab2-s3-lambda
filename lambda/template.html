@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raport koszyków</title>
+  <style>
+    body { margin: 0; min-height: 100vh; background: #0f3d2e; font-family: system-ui, sans-serif;
+           display: flex; align-items: center; justify-content: center; }
+    .karta { background: #fff; border-radius: 12px; padding: 2rem 2.5rem;
+             box-shadow: 0 10px 30px rgba(0,0,0,.35); max-width: 560px; }
+    h1 { color: #ff6b00; text-transform: uppercase; letter-spacing: 2px;
+         border-bottom: 4px solid #ff6b00; padding-bottom: .4rem; }
+    .nowe { font-weight: bold; color: #b00020; }
+  </style>
+</head>
+<body>
+  <main class="karta">
+    <h1>Raport dla {{IMIE}}</h1>
+    <p>Wariant strony generowany przez funkcję Lambda na podstawie szablonu z S3.</p>
+    <p class="nowe">To zdanie dopisano do szablonu w S3 po wdrozeniu funkcji.</p>
+  </main>
+</body>
+</html>
